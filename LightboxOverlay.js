@@ -54,6 +54,8 @@ var LightboxOverlay = React.createClass({
         y: 0,
         opacity: 1,
       },
+      width: WINDOW_WIDTH,
+      height: WINDOW_HEIGHT,
       pan: new Animated.Value(0),
       openVal: new Animated.Value(0),
     };
@@ -90,7 +92,7 @@ var LightboxOverlay = React.createClass({
             target: {
               y: gestureState.dy,
               x: gestureState.dx,
-              opacity: 1 - Math.abs(gestureState.dy / WINDOW_HEIGHT)
+              opacity: 1 - Math.abs(gestureState.dy / this.state.height)
             }
           });
           this.close();
@@ -181,17 +183,17 @@ var LightboxOverlay = React.createClass({
       dragStyle = {
         top: this.state.pan,
       };
-      lightboxOpacityStyle.opacity = this.state.pan.interpolate({inputRange: [-WINDOW_HEIGHT, 0, WINDOW_HEIGHT], outputRange: [0, 1, 0]});
+      lightboxOpacityStyle.opacity = this.state.pan.interpolate({inputRange: [-this.state.height, 0, this.state.height], outputRange: [0, 1, 0]});
     }
 
     var openStyle = [styles.open, {
       left:   openVal.interpolate({inputRange: [0, 1], outputRange: [origin.x, target.x]}),
       top:    openVal.interpolate({inputRange: [0, 1], outputRange: [origin.y + STATUS_BAR_OFFSET, target.y + STATUS_BAR_OFFSET]}),
-      width:  openVal.interpolate({inputRange: [0, 1], outputRange: [origin.width, WINDOW_WIDTH]}),
-      height: openVal.interpolate({inputRange: [0, 1], outputRange: [origin.height, WINDOW_HEIGHT]}),
+      width:  openVal.interpolate({inputRange: [0, 1], outputRange: [origin.width, this.state.width]}),
+      height: openVal.interpolate({inputRange: [0, 1], outputRange: [origin.height, this.state.height]}),
     }];
 
-    var background = (<Animated.View style={[styles.background, { backgroundColor: backgroundColor }, lightboxOpacityStyle]}></Animated.View>);
+    var background = (<Animated.View style={[styles.background, { width: this.state.width, height: this.state.height, backgroundColor: backgroundColor }, lightboxOpacityStyle]}></Animated.View>);
     var header = (<Animated.View style={[styles.header, lightboxOpacityStyle]}>{(renderHeader ?
       renderHeader(this.close) :
       (
@@ -215,7 +217,17 @@ var LightboxOverlay = React.createClass({
       );
     }
     return (
-      <Modal visible={isOpen} transparent={true} onRequestClose={() => null}>
+      <Modal
+        supportedOrientations={['portrait', 'portrait-upside-down', 'landscape', 'landscape-left', 'landscape-right']}
+        onOrientationChange={() => {
+          const { width, height } = Dimensions.get('window');
+          this.setState({
+            width, height
+          })
+        }}
+        visible={isOpen}
+        transparent={true}
+        onRequestClose={() => null}>
         {background}
         {content}
         {header}
@@ -229,8 +241,6 @@ var styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    width: WINDOW_WIDTH,
-    height: WINDOW_HEIGHT,
   },
   open: {
     position: 'absolute',
